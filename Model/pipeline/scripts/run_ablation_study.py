@@ -38,7 +38,7 @@ def run_ablation_full():
     
     for Scenario_id in Scenarios:
         print(f"\n{'='*40}\n PROCESSING Scenario {Scenario_id}\n{'='*40}")
-        Scenario_name = f"Scenario {Scenario_id}"
+        Scenario_name = f"Scenario{Scenario_id}"
         ablation_history[Scenario_name] = {}
         
         if Scenario_id > 0:

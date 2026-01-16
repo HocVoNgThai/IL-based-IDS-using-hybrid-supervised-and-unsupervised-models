@@ -186,25 +186,25 @@ def plot_il_metrics_trends(il, save_path):
     plt.plot(steps, il.history['Avg_Acc'], 'o-', label='Avg Accuracy', linewidth=2, color='#1f77b4')
     plt.plot(steps, il.history['BWT'], 's--', label='Backward Transfer (BWT)', linewidth=2, color='#ff7f0e')
     plt.plot(steps, il.history['Forgetting'], 'x-.', label='Forgetting Measure (F)', linewidth=2, color='#2ca02c')
-    
+    plt.legend(ncol=1, fontsize=15)
     # In giá trị lên từng điểm
     for i in steps:
         # Avg Acc
         val_acc = il.history['Avg_Acc'][i]
-        plt.text(i, val_acc + 0.005, f"{val_acc:.4f}", ha='center', va='bottom', color='#1f77b4', fontweight='bold', fontsize=9)
+        plt.text(i, val_acc + 0.005, f"{val_acc:.4f}", ha='center', va='bottom', color='#1f77b4', fontweight='bold', fontsize=12)
         
         # BWT
         val_bwt = il.history['BWT'][i]
-        plt.text(i, val_bwt - 0.015, f"{val_bwt:.4f}", ha='center', va='top', color='#ff7f0e', fontweight='bold', fontsize=9)
+        plt.text(i, val_bwt - 0.015, f"{val_bwt:.4f}", ha='center', va='top', color='#ff7f0e', fontweight='bold', fontsize=12)
         
         # Forgetting
         val_f = il.history['Forgetting'][i]
-        plt.text(i, val_f + 0.005, f"{val_f:.4f}", ha='center', va='bottom', color='#2ca02c', fontweight='bold', fontsize=9)
+        plt.text(i, val_f + 0.005, f"{val_f:.4f}", ha='center', va='bottom', color='#2ca02c', fontweight='bold', fontsize=12)
 
-    plt.title('Incremental Learning Metrics Evolution')
-    plt.xlabel('Scenario')
-    plt.ylabel('Score')
-    plt.xticks(steps, labels)
+    plt.title('Incremental Learning Metrics Evolution', fontweight='bold', fontsize=16)
+    plt.xlabel('Scenario', fontweight='bold', fontsize=14)
+    plt.ylabel('Score', fontweight='bold', fontsize=14)
+    plt.xticks(steps, labels, fontweight='bold', fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.legend()
     
@@ -217,16 +217,34 @@ def plot_il_matrix(il, save_path):
     Scenarios = sorted(il.R.keys()); n = len(Scenarios); matrix = np.zeros((n, n))
     for i in range(n):
         for j in range(n): matrix[i, j] = il.R[i].get(j, 0)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(matrix, annot=True, fmt='.4f', cmap='YlGnBu', xticklabels=[f'Test C{s}' for s in Scenarios], yticklabels=[f'Train C{s}' for s in Scenarios])
-    plt.title('IL Accuracy Matrix'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
+    
+    # Tăng kích thước hình lên (10, 8) cho thoáng
+    plt.figure(figsize=(10, 8))
+    
+    # annot_kws={"size": 14, "weight": "bold"} -> Làm số trong ô to và đậm
+    sns.heatmap(matrix, annot=True, fmt='.4f', cmap='YlGnBu', 
+                xticklabels=[f'Test C{s}' for s in Scenarios], 
+                yticklabels=[f'Train C{s}' for s in Scenarios],
+                annot_kws={"size": 16, "weight": "bold"}) 
+    
+    # Cập nhật font chữ cho trục X, Y
+    plt.xticks(fontsize=14, fontweight='bold')
+    plt.yticks(fontsize=14, fontweight='bold', rotation=0)
+    
+    # Cập nhật tiêu đề
+    plt.title('IL Accuracy Matrix', fontweight='bold', fontsize=18, pad=20)
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path, dpi=300)
+    plt.close()
 
 # ==================== PER-CLASS ANALYSIS FUNCTIONS ====================
 
 def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels_list=None, hide_unknown=False):
     """
     Tính toán và vẽ Bảng TP/FP/TN/FN (có kèm %) + Biểu đồ Metrics.
+    (Phiên bản cập nhật: Font to, Đậm, Rõ ràng cho báo cáo)
     """
     # 1. Gộp nhãn
     y_true_mapped = list(y_true)
@@ -275,7 +293,9 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
 
     df = pd.DataFrame(metrics_data, columns=["Label", "TP", "FP", "TN", "FN", "Accuracy", "Precision", "Recall", "F1"])
     
-    fig_tbl, ax_tbl = plt.subplots(figsize=(16, len(ordered) * 0.6 + 2)) 
+    # --- 5. DRAW TABLE (Cập nhật Font size) ---
+    # Tăng kích thước hình để chứa bảng chữ to
+    fig_tbl, ax_tbl = plt.subplots(figsize=(20, len(ordered) * 0.8 + 4)) 
     ax_tbl.axis("off")
     
     table_vals = []
@@ -295,41 +315,50 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
                          loc="center", cellLoc="center", colColours=["#f0f0f0"] * 5)
     
     table.auto_set_font_size(False)
-    table.set_fontsize(11)
-    table.scale(1.2, 1.6) # Scale cao hơn chút cho thoáng
-    ax_tbl.set_title(f"Confusion Details: {title}", fontweight='bold', pad=10)
+    table.set_fontsize(14) # Tăng fontsize bảng từ 11 lên 14
+    table.scale(1.2, 2.2)  # Tăng chiều cao dòng (scale y) để chữ to không bị chèn
+    
+    # Làm đậm tiêu đề cột (Hàng đầu tiên)
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(fontweight='bold')
+
+    ax_tbl.set_title(f"Confusion Details: {title}", fontweight='bold', fontsize=20, pad=20)
     
     os.makedirs(os.path.dirname(f"{save_dir}/table_"), exist_ok=True)
     plt.savefig(f"{save_dir}/table_confusion_{title.lower().replace(' ', '_')}.png", bbox_inches="tight", dpi=300)
     plt.close()
     
-    # --- 6. DRAW BAR CHART ---
+    # --- 6. DRAW BAR CHART (Cập nhật Font size) ---
     metrics_plot = ["Accuracy", "Precision", "Recall", "F1"]
     x = np.arange(len(ordered)); width = 0.2
     
-    fig_bar, ax_bar = plt.subplots(figsize=(max(12, len(ordered)*2), 8))
+    # Tăng width của biểu đồ để chứa text
+    fig_bar, ax_bar = plt.subplots(figsize=(max(16, len(ordered)*3), 10))
     colors = ['#9b59b6', '#3498db', '#2ecc71', '#e74c3c']
     
     for i, metric in enumerate(metrics_plot):
         vals = df[metric].values
         rects = ax_bar.bar(x + (i - 1.5) * width, vals, width, label=metric, color=colors[i])
-        if len(rects) <= 5:
-            for rect in rects:
-                if rect.get_height() > 0.01:
-                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
+        
+        # In giá trị lên đầu cột (Font to 10-12, Đậm)
+        for rect in rects:
+            if rect.get_height() > 0.01:
+                ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
                             f"{rect.get_height():.4f}", ha='center', va='bottom', 
-                            fontsize=8, fontweight='bold')
-        else:
-            for rect in rects:
-                if rect.get_height() > 0.01:
-                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
-                            f"{rect.get_height():.4f}", ha='center', va='bottom', 
-                            fontsize=7, fontweight='bold')
+                            fontsize=10, fontweight='bold', rotation=0)
 
-    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=14)
-    ax_bar.set_xticks(x); ax_bar.set_xticklabels(ordered, rotation=0, fontsize=11, fontweight='bold')
-    ax_bar.set_ylabel("Score", fontsize=11, fontweight='bold'); ax_bar.set_ylim(0, 1.1)
-    ax_bar.legend(loc='upper right', ncol=4); ax_bar.grid(axis='y', alpha=0.3)
+    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=20, pad=20)
+    
+    ax_bar.set_xticks(x)
+    ax_bar.set_xticklabels(ordered, rotation=0, fontsize=14, fontweight='bold')
+    
+    ax_bar.set_ylabel("Score", fontsize=16, fontweight='bold')
+    plt.yticks(fontsize=14)
+    ax_bar.set_ylim(0, 1.15)
+    
+    ax_bar.legend(loc='upper right', ncol=4, fontsize=14)
+    ax_bar.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
     plt.savefig(f"{save_dir}/chart_per_class_{title.lower().replace(' ', '_')}.png", dpi=300)
@@ -419,8 +448,10 @@ def plot_unknown_detection_performance(unknown_stats, save_dir):
     x = np.arange(len(Scenarios))
     plt.figure(figsize=(8, 6))
     bars = plt.bar(x, pre_recalls, width=0.5, label='Unknown Detection (Recall)', color='#e74c3c')
-    plt.xticks(x, Scenarios); plt.ylim(0, 1.1); plt.title('Unknown Class Detection (Pre-IL)'); plt.legend()
-    for bar in bars: plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{bar.get_height():.2%}', ha='center', va='bottom')
+    plt.legend(fontsize=14)
+    plt.xticks(x, Scenarios, fontsize=13, fontweight='bold'); plt.yticks(fontsize=13)
+    plt.ylim(0, 1.1); plt.title('Unknown Class Detection (Pre-IL)', fontsize=16, fontweight='bold'); plt.legend()
+    for bar in bars: plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{bar.get_height():.2%}', ha='center', va='bottom', fontsize=14, fontweight='bold')
     os.makedirs(save_dir, exist_ok=True); plt.savefig(f"{save_dir}/unknown_performance.png", dpi=300); plt.close()
 
 class ScenarioDataLoader:
@@ -471,27 +502,71 @@ def get_label_name(y):
 
 def plot_cm(y_true, y_pred, title, save_path):
     labels = sorted(list(set(y_true) | set(y_pred)))
+    
+    # Sắp xếp lại thứ tự nhãn: BENIGN đầu, UNKNOWN cuối
     ordered = [l for l in labels if l != "BENIGN" and l != "UNKNOWN"]
     if "BENIGN" in labels: ordered.insert(0, "BENIGN")
     if "UNKNOWN" in labels: ordered.append("UNKNOWN")
+    
     cm = confusion_matrix(y_true, y_pred, labels=ordered)
+    
+    # Chuẩn hóa matrix sang %
     with np.errstate(divide='ignore', invalid='ignore'):
         cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm_norm = np.nan_to_num(cm_norm)
+    
     plt.figure(figsize=(10, 8))
-    sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Blues', xticklabels=ordered, yticklabels=ordered, vmin=0, vmax=1)
-    plt.title(f"{title} (%)"); plt.ylabel('True'); plt.xlabel('Pred'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
+    
+    # --- Cập nhật heatmap ---
+    # annot_kws: Chỉnh font chữ số bên trong các ô
+    ax = sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Blues', 
+                     xticklabels=ordered, yticklabels=ordered, vmin=0, vmax=1,
+                     annot_kws={"size": 15, "weight": "bold"}) 
+    
+    # --- Cập nhật Tiêu đề và Nhãn trục ---
+    plt.title(f"{title} (%)", fontsize=17, fontweight='bold', pad=20)
+    plt.ylabel('True Label', fontsize=15, fontweight='bold')
+    plt.xlabel('Predicted Label', fontsize=15, fontweight='bold')
+    
+    # --- Cập nhật Font chữ cho các nhãn (BENIGN, DDoS...) ---
+    plt.xticks(fontsize=14, fontweight='bold', rotation=45, ha='right')
+    plt.yticks(fontsize=14, fontweight='bold', rotation=0)
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path, dpi=300)
+    plt.close()
 
 def plot_binary_cm(y_true, y_pred, title, save_path):
     cm = confusion_matrix(y_true, y_pred)
+    
+    # Chuẩn hóa ma trận sang %
     with np.errstate(divide='ignore', invalid='ignore'):
         cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm_norm = np.nan_to_num(cm_norm)
-    plt.figure(figsize=(6, 5))
-    sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Reds', xticklabels=['Abnormal', 'Normal'], yticklabels=['Abnormal', 'Normal'], vmin=0, vmax=1)
-    plt.title(f"{title} (%)"); plt.ylabel('True'); plt.xlabel('Pred'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
+        
+    plt.figure(figsize=(8, 6)) # Tăng kích thước hình
+    
+    # Vẽ Heatmap
+    sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Reds', 
+                xticklabels=['Abnormal', 'Normal'], 
+                yticklabels=['Abnormal', 'Normal'], 
+                vmin=0, vmax=1,
+                annot_kws={"size": 15, "weight": "bold"}) # Số liệu trong ô to, đậm
+    
+    # Cập nhật Tiêu đề và Nhãn trục
+    plt.title(f"{title} (%)", fontsize=17, fontweight='bold', pad=20)
+    plt.ylabel('True Label', fontsize=15, fontweight='bold')
+    plt.xlabel('Predicted Label', fontsize=15, fontweight='bold')
+    
+    # Cập nhật Font chữ cho nhãn (Abnormal, Normal)
+    plt.xticks(fontsize=14, fontweight='bold')
+    plt.yticks(fontsize=14, fontweight='bold', rotation=0)
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path, dpi=300)
+    plt.close()
 
 def plot_unknown_binary_cm(y_true, preds, unknown_label, save_path, Scenario_name):
     y_true = np.array(y_true); preds = np.array(preds)
@@ -519,8 +594,10 @@ def plot_metrics_bar(report_dict, title, save_path):
     except: values = [0,0,0]
     plt.figure(figsize=(8, 6))
     bars = plt.bar(metrics, values, color=['#3498db', '#2ecc71', '#e74c3c'])
-    for bar in bars: plt.text(bar.get_x() + bar.get_width()/2., bar.get_height(), f'{bar.get_height():.4f}', ha='center', va='bottom')
-    plt.title(title); plt.ylim(0, 1.1); plt.ylabel('Score'); plt.tight_layout()
+    for bar in bars: plt.text(bar.get_x() + bar.get_width()/2., bar.get_height(), f'{bar.get_height():.4f}', ha='center', va='bottom',fontsize=12, fontweight='bold')
+    plt.title(title,fontsize=14, fontweight='bold'); plt.ylim(0, 1.15); plt.ylabel('Score',fontsize=12, fontweight='bold'); plt.tight_layout()
+    plt.xticks(fontsize=11, fontweight='bold') # Nhãn trục X (tên metrics) lớn hơn
+    plt.yticks(fontsize=11)
     os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
 
 def calculate_unknown_metrics(y_true, preds, unknown_label, save_dir, Scenario_name):
@@ -626,6 +703,7 @@ def evaluate_gray_zone(y_true, xgb_pred, xgb_conf, ae_pred, ocsvm_pred, c_min, c
 
 def plot_scenarios_comparison(results_dict, save_path, Scenario_name):
     """
+    Vẽ biểu đồ so sánh hiệu năng giữa các cấu hình khác nhau (Ablation Study).
     results_dict: {'XGB Only': {'f1': 0.8}, 'XGB+AE': {'f1': 0.85}, ...}
     """
     scenarios = list(results_dict.keys())
@@ -642,35 +720,44 @@ def plot_scenarios_comparison(results_dict, save_path, Scenario_name):
     x = np.arange(len(scenarios))
     width = 0.25
     
-    plt.figure(figsize=(12, 7))
+    # Tăng kích thước hình (16x9)
+    plt.figure(figsize=(16, 9))
     
     # Vẽ 3 cột
     plt.bar(x - width, data['Precision'], width, label='Precision', color='#3498db')
     plt.bar(x, data['Recall'], width, label='Recall', color='#2ecc71')
     plt.bar(x + width, data['F1-Score'], width, label='F1-Score', color='#e74c3c')
     
-    plt.xlabel('Ablation Scenarios')
-    plt.ylabel('Score')
-    plt.title(f'Performance Comparison of Different Pipeline Configurations - {Scenario_name}')
-    plt.xticks(x, scenarios)
+    # Cập nhật font chữ to và đậm hơn
+    plt.xlabel('Ablation Scenarios', fontsize=16, fontweight='bold')
+    plt.ylabel('Score', fontsize=16, fontweight='bold')
+    plt.title(f'Performance Comparison of Different Pipeline Configurations - {Scenario_name}', 
+              fontsize=20, fontweight='bold', pad=20)
+    
+    plt.xticks(x, scenarios, fontsize=14, fontweight='bold')
+    plt.yticks(fontsize=14)
     plt.ylim(0, 1.15)
-    plt.legend(loc='upper right', ncol = 3)
+    
+    # Legend to hơn
+    plt.legend(loc='upper right', ncol=3, fontsize=14)
     plt.grid(axis='y', alpha=0.3)
     
-    # Thêm text giá trị F1 lên cột
+    # Thêm text giá trị lên cột (Font to 12, Đậm)
     for i in range(len(scenarios)):
-
+        # Precision
         plt.text(i - width, data['Precision'][i] + 0.01, 
                  f"{data['Precision'][i]:.4f}", 
-                 ha='center', va='bottom', fontweight='bold', fontsize=9, color='black')
+                 ha='center', va='bottom', fontweight='bold', fontsize=12, color='black')
         
+        # Recall
         plt.text(i, data['Recall'][i] + 0.01, 
                  f"{data['Recall'][i]:.4f}", 
-                 ha='center', va='bottom', fontweight='bold', fontsize=9, color='black')
+                 ha='center', va='bottom', fontweight='bold', fontsize=12, color='black')
 
+        # F1-Score
         plt.text(i + width, data['F1-Score'][i] + 0.01, 
                  f"{data['F1-Score'][i]:.4f}", 
-                 ha='center', va='bottom', fontweight='bold', fontsize=9, color='black')
+                 ha='center', va='bottom', fontweight='bold', fontsize=12, color='black')
         
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=300)
@@ -754,11 +841,11 @@ def plot_unknown_detection_comparison(results_data, save_path):
     rects2 = ax.bar(x + width/2, Scenario2_vals, width, label='Scenario 2 (Target: MITM/DNS_Spoofing)', color='#e74c3c')
 
     # Thêm nhãn, tiêu đề
-    ax.set_ylabel('Detection Rate (Recall of New Attacks as UNKNOWN)', fontweight='bold')
-    ax.set_xlabel('Ablation Scenarios', fontweight='bold')
-    ax.set_title('Unknown Threat Detection Comparison (Scenario 1 vs Scenario 2)', fontsize=14, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(scenarios)
+    ax.set_ylabel('Detection Rate (Recall of New Attacks as UNKNOWN)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Ablation Scenarios', fontsize=14, fontweight='bold')
+    ax.set_title('Unknown Threat Detection Comparison (Scenario 1 vs Scenario 2)', fontsize=17, fontweight='bold')
+    ax.set_xticks(x, scenarios, fontsize=12, fontweight='bold')
+    plt.yticks(fontsize=12)
     ax.set_ylim(0, 1) # Tăng trần để chứa text
     ax.legend()
     ax.grid(axis='y', alpha=0.3)
@@ -771,7 +858,7 @@ def plot_unknown_detection_comparison(results_data, save_path):
                         xy=(rect.get_x() + rect.get_width() / 2, height),
                         xytext=(0, 3),  # 3 points vertical offset
                         textcoords="offset points",
-                        ha='center', va='bottom', fontweight='bold')
+                        ha='center', va='bottom', fontsize=14, fontweight='bold')
 
     autolabel(rects1)
     autolabel(rects2)
@@ -842,7 +929,8 @@ def plot_pipeline_evolution_comparison(evolution_data, save_path):
     x = np.arange(len(phases))
     width = 0.2
     
-    fig, ax = plt.subplots(figsize=(16, 9))
+    # Tăng kích thước hình (18x10) để các cột và chữ thoáng hơn
+    fig, ax = plt.subplots(figsize=(18, 10))
     
     # Màu sắc: Xanh dương, Cam, Xanh lá, Đỏ
     colors = ['#3498db', '#e67e22', '#2ecc71', '#e74c3c']
@@ -852,24 +940,34 @@ def plot_pipeline_evolution_comparison(evolution_data, save_path):
         offset = x + (i - 1.5) * width
         rects = ax.bar(offset, values, width, label=metric, color=colors[i])
         
-        # In giá trị lên đầu cột
+        # In giá trị lên đầu cột (Font to, Đậm)
         for rect in rects:
             height = rect.get_height()
             if height > 0:
                 ax.text(rect.get_x() + rect.get_width()/2., height + 0.01,
                         f'{height:.4f}',
-                        ha='center', va='bottom', fontsize=9, fontweight='bold')
+                        ha='center', va='bottom', 
+                        fontsize=12, fontweight='bold') # Tăng fontsize từ 9 lên 12
 
-    ax.set_ylabel('Score', fontweight='bold', fontsize=12)
-    ax.set_title('Pipeline Performance Evolution (Pre-IL vs Post-IL)', fontweight='bold', fontsize=16)
+    # Cập nhật Tiêu đề và Nhãn trục (Font to, Đậm)
+    ax.set_ylabel('Score', fontweight='bold', fontsize=16) # Tăng từ 12 lên 16
+    ax.set_title('Pipeline Performance Evolution (Pre-IL vs Post-IL)', fontweight='bold', fontsize=20, pad=20) # Tăng lên 20
+    
     ax.set_xticks(x)
-    ax.set_xticklabels(phases, fontsize=11, fontweight='bold')
-    ax.set_ylim(0, 1.1) # Tăng trần để chứa text xoay
-    ax.legend(loc='upper right', ncol=4, fontsize=11)
+    ax.set_xticklabels(phases, fontsize=14, fontweight='bold') # Tăng lên 14
+    
+    # Chỉnh font số trục Y
+    plt.yticks(fontsize=14)
+    
+    ax.set_ylim(0, 1.15) # Nới rộng trần thêm chút nữa để số không bị cắt
+    
+    # Legend to và rõ hơn
+    ax.legend(loc='upper right', ncol=4, fontsize=14)
+    
     ax.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path, dpi=1000)
+    plt.savefig(save_path, dpi=300) # 300 dpi là chuẩn nét, 1000 sẽ rất nặng file
     plt.close()
     print(f"Evolution chart saved to {save_path}")
