@@ -244,7 +244,6 @@ def plot_il_matrix(il, save_path):
 def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels_list=None, hide_unknown=False):
     """
     Tính toán và vẽ Bảng TP/FP/TN/FN (có kèm %) + Biểu đồ Metrics.
-    (Phiên bản cập nhật: Font to, Đậm, Rõ ràng cho báo cáo)
     """
     # 1. Gộp nhãn
     y_true_mapped = list(y_true)
@@ -293,9 +292,7 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
 
     df = pd.DataFrame(metrics_data, columns=["Label", "TP", "FP", "TN", "FN", "Accuracy", "Precision", "Recall", "F1"])
     
-    # --- 5. DRAW TABLE (Cập nhật Font size) ---
-    # Tăng kích thước hình để chứa bảng chữ to
-    fig_tbl, ax_tbl = plt.subplots(figsize=(20, len(ordered) * 0.8 + 4)) 
+    fig_tbl, ax_tbl = plt.subplots(figsize=(16, len(ordered) * 0.6 + 2)) 
     ax_tbl.axis("off")
     
     table_vals = []
@@ -315,50 +312,41 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
                          loc="center", cellLoc="center", colColours=["#f0f0f0"] * 5)
     
     table.auto_set_font_size(False)
-    table.set_fontsize(14) # Tăng fontsize bảng từ 11 lên 14
-    table.scale(1.2, 2.2)  # Tăng chiều cao dòng (scale y) để chữ to không bị chèn
-    
-    # Làm đậm tiêu đề cột (Hàng đầu tiên)
-    for (row, col), cell in table.get_celld().items():
-        if row == 0:
-            cell.set_text_props(fontweight='bold')
-
-    ax_tbl.set_title(f"Confusion Details: {title}", fontweight='bold', fontsize=20, pad=20)
+    table.set_fontsize(11)
+    table.scale(1.2, 1.6) # Scale cao hơn chút cho thoáng
+    ax_tbl.set_title(f"Confusion Details: {title}", fontweight='bold', pad=10)
     
     os.makedirs(os.path.dirname(f"{save_dir}/table_"), exist_ok=True)
     plt.savefig(f"{save_dir}/table_confusion_{title.lower().replace(' ', '_')}.png", bbox_inches="tight", dpi=300)
     plt.close()
     
-    # --- 6. DRAW BAR CHART (Cập nhật Font size) ---
+    # --- 6. DRAW BAR CHART ---
     metrics_plot = ["Accuracy", "Precision", "Recall", "F1"]
     x = np.arange(len(ordered)); width = 0.2
     
-    # Tăng width của biểu đồ để chứa text
-    fig_bar, ax_bar = plt.subplots(figsize=(max(16, len(ordered)*3), 10))
+    fig_bar, ax_bar = plt.subplots(figsize=(max(18, len(ordered)*3), 10))
     colors = ['#9b59b6', '#3498db', '#2ecc71', '#e74c3c']
     
     for i, metric in enumerate(metrics_plot):
         vals = df[metric].values
         rects = ax_bar.bar(x + (i - 1.5) * width, vals, width, label=metric, color=colors[i])
-        
-        # In giá trị lên đầu cột (Font to 10-12, Đậm)
-        for rect in rects:
-            if rect.get_height() > 0.01:
-                ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
+        if len(rects) <= 5:
+            for rect in rects:
+                if rect.get_height() > 0.01:
+                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
                             f"{rect.get_height():.4f}", ha='center', va='bottom', 
-                            fontsize=10, fontweight='bold', rotation=0)
+                            fontsize=12, fontweight='bold')
+        else:
+            for rect in rects:
+                if rect.get_height() > 0.01:
+                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
+                            f"{rect.get_height():.4f}", ha='center', va='bottom', 
+                            fontsize=10, fontweight='bold')
 
-    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=20, pad=20)
-    
-    ax_bar.set_xticks(x)
-    ax_bar.set_xticklabels(ordered, rotation=0, fontsize=14, fontweight='bold')
-    
-    ax_bar.set_ylabel("Score", fontsize=16, fontweight='bold')
-    plt.yticks(fontsize=14)
-    ax_bar.set_ylim(0, 1.15)
-    
-    ax_bar.legend(loc='upper right', ncol=4, fontsize=14)
-    ax_bar.grid(axis='y', alpha=0.3)
+    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=16)
+    ax_bar.set_xticks(x); ax_bar.set_xticklabels(ordered, rotation=0, fontsize=15, fontweight='bold')
+    ax_bar.set_ylabel("Score", fontsize=15, fontweight='bold'); ax_bar.set_ylim(0, 1.12)
+    ax_bar.legend(loc='upper right', ncol=4, fontsize=14); ax_bar.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
     plt.savefig(f"{save_dir}/chart_per_class_{title.lower().replace(' ', '_')}.png", dpi=300)
