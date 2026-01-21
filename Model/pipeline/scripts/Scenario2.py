@@ -12,10 +12,7 @@ BASE_DATA_DIR = "merge1.4_3-4-5/case-from-3-incre-4class-incre-6class"
 GLOBAL_SCALER_PATH = "Scenarios/global_scaler.joblib"
 
 def load_replay_buffer(path, samples_per_label=10000):
-    """
-    Load data cũ, scale dữ liệu, sau đó chọn mẫu Replay Buffer
-    theo chiến lược: 20% Herding (gần Mean nhất) + 80% Random.
-    """
+
     loader = ScenarioDataLoader()
     loader.load_scaler(GLOBAL_SCALER_PATH)
     
@@ -44,10 +41,8 @@ def load_replay_buffer(path, samples_per_label=10000):
         
         class_features = samples_key[feature_cols].values
         
-        # Tính Mean class (Centroid)
         class_mean = class_features.mean(axis=0).reshape(1, -1)
         
-        # Tính khoảng cách Euclidean từ mỗi điểm đến Mean
         distances = cdist(class_features, class_mean, metric='euclidean').flatten()
         
         samples_key = samples_key.assign(dist_to_mean=distances)

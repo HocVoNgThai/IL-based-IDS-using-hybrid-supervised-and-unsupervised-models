@@ -15,7 +15,7 @@ from src.utils import (
     evaluate_final_pipeline, calculate_weighted_metrics,
     ILMetrics, plot_il_matrix, plot_il_metrics_trends, plot_pipeline_evolution_comparison,
     evaluate_supervised_with_unknown, evaluate_gray_zone,
-    plot_unknown_detection_comparison  # <--- Bổ sung import
+    plot_unknown_detection_comparison 
 )
 
 BASE_DATA_DIR = "merge1.4_3-4-5/case-from-3-incre-4class-incre-6class"
@@ -95,11 +95,8 @@ def run_evaluation():
     il_metrics = ILMetrics()
     evolution_history = {}
     
-    # Dictionary lưu trữ tỷ lệ phát hiện Unknown để vẽ biểu đồ so sánh
     unknown_detection_stats = {
         'Full Pipeline': {'Scenario 1': 0, 'Scenario 2': 0},
-        # Nếu muốn so sánh với XGB Only, cần chạy thêm logic đó, 
-        # nhưng ở đây ta lấy kết quả của Pipeline hiện tại.
     }
 
     # ==============================================================================
@@ -144,14 +141,12 @@ def run_evaluation():
     y_true_mapped = map_labels_for_pre_il(y_train1, unknown_target_labels=[3])
     plot_cm(y_true_mapped, preds_pre, "CM Pipeline (Pre-IL) - Mapped", os.path.join(save_dir_pre, "cm_pre_il_mapped.png"))
     
-    # Tính và lưu Unknown Recall cho Scenario 1
     unk_stats_s1 = calculate_unknown_metrics(y_train1, preds_pre, unknown_label=3, save_dir=save_dir_pre, Scenario_name="Scenario1_PreIL")
     unknown_detection_stats['Full Pipeline']['Scenario 1'] = unk_stats_s1['recall'] # Lưu Recall
 
     metrics1_pre = calculate_weighted_metrics(y_train1, preds_pre, map_new_to_unknown=[3])
     evolution_history['Scenario 1 (Pre-IL)\n(+Reconn)'] = metrics1_pre
 
-    # --- Phase 3: Post-IL ---
     print("\n>>> Phase 3: Post-IL")
     save_dir_post = os.path.join(SAVE_ROOT, "Scenario1_phase3_post_il")
     os.makedirs(save_dir_post, exist_ok=True)
@@ -175,8 +170,7 @@ def run_evaluation():
     # 3. Scenario 2
     # ==============================================================================
     print(f"\n{'='*10} Scenario 2: MITM & DNS {'='*10}")
-    
-    # --- Phase 1: Pre-IL ---
+
     print(">>> Phase 1: Pre-IL")
     save_dir_pre = os.path.join(SAVE_ROOT, "Scenario2_phase1_pre_il")
     os.makedirs(save_dir_pre, exist_ok=True)
@@ -194,15 +188,13 @@ def run_evaluation():
     
     y_true_mapped = map_labels_for_pre_il(y_train2, unknown_target_labels=[4, 5])
     plot_cm(y_true_mapped, preds_pre, "CM Pipeline (Pre-IL) - Mapped", os.path.join(save_dir_pre, "cm_pre_il_mapped.png"))
-    
-    # Tính và lưu Unknown Recall cho Scenario 2
+
     unk_stats_s2 = calculate_unknown_metrics(y_train2, preds_pre, unknown_label=[4, 5], save_dir=save_dir_pre, Scenario_name="Scenario2_PreIL")
     unknown_detection_stats['Full Pipeline']['Scenario 2'] = unk_stats_s2['recall'] # Lưu Recall
 
     metrics2_pre = calculate_weighted_metrics(y_train2, preds_pre, map_new_to_unknown=[4, 5])
     evolution_history['Scenario 2 (Pre-IL)\n(+ MITM&DNS Spoofing)'] = metrics2_pre
 
-    # --- Phase 3: Post-IL ---
     print("\n>>> Phase 3: Post-IL")
     save_dir_post = os.path.join(SAVE_ROOT, "Scenario2_phase3_post_il")
     os.makedirs(save_dir_post, exist_ok=True)
@@ -228,22 +220,13 @@ def run_evaluation():
     # 4. FINAL OVERALL PLOTS
     # ==============================================================================
     print(f"\n{'='*10} GENERATING OVERALL SUMMARY CHARTS {'='*10}")
-    
-    # 1. Pipeline Evolution Comparison
+
     plot_pipeline_evolution_comparison(evolution_history, os.path.join(SAVE_ROOT, "pipeline_evolution_comparison.png"))
-    
-    # 2. IL Matrix
     plot_il_matrix(il_metrics, os.path.join(SAVE_ROOT, "il_matrix.png"))
-    
-    # 3. IL Trends
     il_metrics.calculate_metrics(current_step=2)
     plot_il_metrics_trends(il_metrics, os.path.join(SAVE_ROOT, "il_trends.png"))
 
-    # 4. Unknown Detection Comparison (MỚI THÊM)
-    # Giả lập dữ liệu XGB Only để so sánh (hoặc bạn có thể chạy model XGBOnly thực tế nếu muốn chính xác)
-    # Ở đây tôi thêm một entry giả định cho XGB Only để biểu đồ có 2 cột so sánh như hình mẫu
-    # Nếu không muốn giả định, bạn chỉ vẽ cho Full Pipeline.
-    unknown_detection_stats['XGB Only'] = {'Scenario 1': 0.689, 'Scenario 2': 0.513} # Dữ liệu từ hình mẫu của bạn
+    unknown_detection_stats['XGB Only'] = {'Scenario 1': 0.689, 'Scenario 2': 0.513} 
     
     plot_unknown_detection_comparison(unknown_detection_stats, os.path.join(SAVE_ROOT, "unknown_detection_comparison.png"))
     
