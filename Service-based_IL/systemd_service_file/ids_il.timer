@@ -3,7 +3,7 @@ Description=Timer Check Interval IL every 5 min
 
 [Timer]
 OnActiveSec=1min
-OnUnitActiveSec=3min
+OnUnitActiveSec=5min
 Persistent=true
 Unit=ids_il.service
 

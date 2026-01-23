@@ -183,7 +183,7 @@ def plot_detailed_resource_usage(history_dict, Scenario_name, save_path):
     ax1.plot(time_axis, history_dict['cpu'], label='CPU %', color='red'); ax1.plot(time_axis, history_dict['ram'], label='RAM %', color='green')
     ax1.set_ylabel('Usage (%)'); ax1.set_title(f'Resource Detail - {Scenario_name}'); ax1.legend()
     ax2.plot(time_axis, history_dict['gpu_mem'], label='GPU Mem (MB)', color='purple'); ax2.set_ylabel('MB'); ax2.set_xlabel('Time (s)'); ax2.legend()
-    plt.tight_layout(); os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    plt.tight_layout(); os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
 
 def plot_il_metrics_trends(il, save_path):
     """Biểu đồ biến động F, BWT, AvgAcc với Text Annotations"""
@@ -219,7 +219,7 @@ def plot_il_metrics_trends(il, save_path):
     plt.legend()
     
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path)
+    plt.savefig(save_path, dpi= 300)
     plt.close()
 
 def plot_il_matrix(il, save_path):
@@ -230,7 +230,7 @@ def plot_il_matrix(il, save_path):
     plt.figure(figsize=(8, 6))
     sns.heatmap(matrix, annot=True, fmt='.4f', cmap='YlGnBu', xticklabels=[f'Test C{s}' for s in Scenarios], yticklabels=[f'Train C{s}' for s in Scenarios])
     plt.title('IL Accuracy Matrix'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
 
 # ==================== PER-CLASS ANALYSIS FUNCTIONS ====================
 
@@ -287,7 +287,7 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
     
     # --- 5. DRAW TABLE (WITH PERCENTAGES) ---
     # Tăng chiều rộng hình để chứa text dài hơn
-    fig_tbl, ax_tbl = plt.subplots(figsize=(16, len(ordered) * 0.6 + 2)) 
+    fig_tbl, ax_tbl = plt.subplots(figsize=(20, len(ordered) * 0.6 + 2)) 
     ax_tbl.axis("off")
     
     table_vals = []
@@ -322,27 +322,45 @@ def analyze_and_plot_class_details(y_true, y_pred, title, save_dir, merge_labels
     metrics_plot = ["Accuracy", "Precision", "Recall", "F1"]
     x = np.arange(len(ordered)); width = 0.2
     
-    fig_bar, ax_bar = plt.subplots(figsize=(max(12, len(ordered)*2), 8))
+    fig_bar, ax_bar = plt.subplots(figsize=(max(16, len(ordered)*2), 8))
     colors = ['#9b59b6', '#3498db', '#2ecc71', '#e74c3c']
     
     for i, metric in enumerate(metrics_plot):
         vals = df[metric].values
         rects = ax_bar.bar(x + (i - 1.5) * width, vals, width, label=metric, color=colors[i])
-        for rect in rects:
-            if rect.get_height() > 0.01:
-                ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
+        if len(rects) <= 5:
+            for rect in rects:
+                if rect.get_height() > 0.01:
+                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
                             f"{rect.get_height():.4f}", ha='center', va='bottom', 
-                            fontsize=9, fontweight= 'bold')
+                            fontsize=12, fontweight='bold')
+        else:
+            for rect in rects:
+                if rect.get_height() > 0.01:
+                    ax_bar.text(rect.get_x() + rect.get_width()/2., rect.get_height() + 0.01, 
+                            f"{rect.get_height():.4f}", ha='center', va='bottom', 
+                            fontsize=10, fontweight='bold')
+            
 
-    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=14)
-    ax_bar.set_xticks(x); ax_bar.set_xticklabels(ordered, rotation=0, fontsize=11, fontweight='bold')
-    ax_bar.set_ylabel("Score"); ax_bar.set_ylim(0, 1.1)
-    ax_bar.legend(loc='upper right', ncol=4); ax_bar.grid(axis='y', alpha=0.3)
+    ax_bar.set_title(f"Per-Class Performance Metrics: {title}", fontweight='bold', fontsize=16)
+    
+    ax_bar.set_xticks(x);
+    ax_bar.set_xticklabels(ordered, rotation=0, fontsize=15, fontweight='bold')
+    
+    ax_bar.set_ylabel("Score", fontsize=15, fontweight='bold')
+    ax_bar.set_ylim(0, 1.12)
+    
+    ax_bar.legend(loc='upper right', ncol=4, fontsize=14)
+    ax_bar.grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
+    
     plt.savefig(f"{save_dir}/chart_per_class_{title.lower().replace(' ', '_')}.png", dpi=300)
     plt.close()
+    
     print(f"   -> Saved details for {title}")
+    return
+
 
 def plot_all_models_performance(all_metrics_history, save_dir):
     """
@@ -415,17 +433,17 @@ def plot_all_models_performance(all_metrics_history, save_dir):
         ax.set_xticks(x)
         ax.set_xticklabels(Scenarios, fontsize=11)
         ax.set_ylabel('Score', fontsize=11)
-        ax.set_ylim(0, 1.35) # Tăng trần trục Y để chứa text xoay dọc
+        ax.set_ylim(0, 1.1) # Tăng trần trục Y để chứa text xoay dọc
         ax.grid(axis='y', alpha=0.3)
         
         # Legend
-        ax.legend(loc='lower left', ncol=2, fontsize=10)
+        ax.legend(loc='upper left', ncol=2, fontsize=10)
 
     plt.tight_layout()
     os.makedirs(save_dir, exist_ok=True)
     
     save_path = f"{save_dir}/all_models_comparison_bar.png"
-    plt.savefig(save_path)
+    plt.savefig(save_path, dpi = 300)
     plt.close()
     print(f"Comparison bar charts saved to {save_path}")
 
@@ -438,7 +456,7 @@ def plot_unknown_detection_performance(unknown_stats, save_dir):
     bars = plt.bar(x, pre_recalls, width=0.5, label='Unknown Detection (Recall)', color='#e74c3c')
     plt.xticks(x, Scenarios); plt.ylim(0, 1.1); plt.title('Unknown Class Detection (Pre-IL)'); plt.legend()
     for bar in bars: plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{bar.get_height():.2%}', ha='center', va='bottom')
-    os.makedirs(save_dir, exist_ok=True); plt.savefig(f"{save_dir}/unknown_performance.png"); plt.close()
+    os.makedirs(save_dir, exist_ok=True); plt.savefig(f"{save_dir}/unknown_performance.png", dpi =300); plt.close()
 
 # ... [SessionDataLoader, SessionManager GIỮ NGUYÊN] ...
 class SessionDataLoader:
@@ -492,14 +510,29 @@ def plot_cm(y_true, y_pred, title, save_path):
     ordered = [l for l in labels if l != "Benign" and l != "Unknown"]
     if "Benign" in labels: ordered.insert(0, "Benign")
     if "Unknown" in labels: ordered.append("Unknown")
+    
     cm = confusion_matrix(y_true, y_pred, labels=ordered)
+    
     with np.errstate(divide='ignore', invalid='ignore'):
         cm_norm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         cm_norm = np.nan_to_num(cm_norm)
+    
     plt.figure(figsize=(10, 8))
-    sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Blues', xticklabels=ordered, yticklabels=ordered, vmin=0, vmax=1)
-    plt.title(f"{title} (%)"); plt.ylabel('True'); plt.xlabel('Pred'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    
+    ax = sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Blues', xticklabels=ordered, yticklabels=ordered, vmin=0, vmax=1)
+    
+    plt.title(f"{title} (%)", fontsize=17, fontweight='bold', pad=20) 
+    plt.ylabel('True Label', fontsize=17, fontweight = 'bold')
+    plt.xlabel('Predicted Label', fontsize =15, fontweight='bold')
+    
+    plt.xticks(fontsize =14 , fontweight='bold', rotation=45, ha='right')
+    plt.yticks(fontsize=14, fontweight='bold', rotation=0)
+    
+    plt.tight_layout()
+    
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)  
+    plt.savefig(save_path, dpi=300);
+    plt.close()
 
 def plot_binary_cm(y_true, y_pred, title, save_path):
     cm = confusion_matrix(y_true, y_pred)
@@ -509,7 +542,7 @@ def plot_binary_cm(y_true, y_pred, title, save_path):
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Reds', xticklabels=['Abnormal', 'Normal'], yticklabels=['Abnormal', 'Normal'], vmin=0, vmax=1)
     plt.title(f"{title} (%)"); plt.ylabel('True'); plt.xlabel('Pred'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi =300); plt.close()
 
 def plot_unknown_binary_cm(y_true, preds, unknown_label, save_path, session_name):
     y_true = np.array(y_true); preds = np.array(preds)
@@ -529,7 +562,7 @@ def plot_unknown_binary_cm(y_true, preds, unknown_label, save_path, session_name
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm_norm, annot=True, fmt='.1%', cmap='Oranges', xticklabels=['Others', 'Pred Unknown'], yticklabels=['True Others', 'True Unknown'], vmin=0, vmax=1)
     plt.title(f"Unknown Detection Confusion Matrix - {session_name}"); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
 
 def plot_metrics_bar(report_dict, title, save_path):
     metrics = ['precision', 'recall', 'f1-score']
@@ -540,7 +573,7 @@ def plot_metrics_bar(report_dict, title, save_path):
     for bar in bars: plt.text(bar.get_x() + bar.get_width()/2., bar.get_height(), f'{bar.get_height():.4f}', ha='center', va='bottom')
     plt.legend(bars, metrics, loc='upper right', frameon=True, shadow=True)
     plt.title(title); plt.ylim(0, 1.1); plt.ylabel('Score'); plt.tight_layout()
-    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path); plt.close()
+    os.makedirs(os.path.dirname(save_path), exist_ok=True); plt.savefig(save_path, dpi=300); plt.close()
 
 def calculate_unknown_metrics(y_true, preds, unknown_label, save_dir, session_name):
     y_true = np.array(y_true); preds = np.array(preds)
@@ -677,7 +710,7 @@ def plot_scenarios_comparison(results_dict, save_path, Scenario_name):
     plt.title(f'Performance Comparison of Different Pipeline Configurations - {Scenario_name}')
     plt.xticks(x, scenarios)
     plt.ylim(0, 1.15)
-    plt.legend(loc='lower right')
+    plt.legend(loc='upper right', ncol=3)
     plt.grid(axis='y', alpha=0.3)
     
     # Thêm text giá trị F1 lên cột
@@ -696,7 +729,7 @@ def plot_scenarios_comparison(results_dict, save_path, Scenario_name):
                  ha='center', va='bottom', fontweight='bold', fontsize=9, color='black')
         
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path)
+    plt.savefig(save_path, dpi=300)
     plt.close()
     print(f"Comparison chart saved to {save_path}")
 
@@ -740,12 +773,12 @@ def plot_ablation_evolution(ablation_history, save_dir):
 
         ax.set_title(f'{metric} Evolution')
         ax.set_xticks(x); ax.set_xticklabels(Scenarios)
-        ax.set_ylim(0.6, 1.05); ax.grid(True, alpha=0.3)
-        if i == 0: ax.legend(loc='lower left') # Chỉ hiện legend ở hình đầu cho gọn
+        ax.set_ylim(0.6, 1.1); ax.grid(True, alpha=0.3)
+        if i == 0: ax.legend(loc='upper left') # Chỉ hiện legend ở hình đầu cho gọn
 
     plt.tight_layout()
     os.makedirs(save_dir, exist_ok=True)
-    plt.savefig(f"{save_dir}/ablation_evolution.png")
+    plt.savefig(f"{save_dir}/ablation_evolution.png", dpi=300)
     plt.close()
     print(f"Ablation evolution chart saved to {save_dir}/ablation_evolution.png")
 
@@ -774,7 +807,7 @@ def plot_unknown_detection_comparison(results_data, save_path):
     
     # Vẽ 2 nhóm cột
     rects1 = ax.bar(x - width/2, Scenario1_vals, width, label='Scenario 1 (Target: Reconn)', color='#3498db')
-    rects2 = ax.bar(x + width/2, Scenario2_vals, width, label='Scenario 2 (Target: MITM/DNS)', color='#e74c3c')
+    rects2 = ax.bar(x + width/2, Scenario2_vals, width, label='Scenario 2 (Target: MITM/DNS_Spoofing)', color='#e74c3c')
 
     # Thêm nhãn, tiêu đề
     ax.set_ylabel('Detection Rate (Recall of New Attacks as Unknown)', fontweight='bold')
@@ -782,7 +815,7 @@ def plot_unknown_detection_comparison(results_data, save_path):
     ax.set_title('Unknown Threat Detection Comparison (Scenario 1 vs Scenario 2)', fontsize=14, fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(scenarios)
-    ax.set_ylim(0, 1.15) # Tăng trần để chứa text
+    ax.set_ylim(0, 1) # Tăng trần để chứa text
     ax.legend()
     ax.grid(axis='y', alpha=0.3)
 
@@ -801,6 +834,6 @@ def plot_unknown_detection_comparison(results_data, save_path):
 
     fig.tight_layout()
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path)
+    plt.savefig(save_path, dpi=300)
     plt.close()
     print(f"Unknown detection comparison chart saved to {save_path}")

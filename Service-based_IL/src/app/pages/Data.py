@@ -190,9 +190,9 @@ def main():
                     value= incremental_settings.IL_DATA_DIR/ f"{curr_file_time}.parquet"
                 )
                 if st.button("Save As"):
-                    out = Path(settings.DATA_DIR) / save_as
+                    out = Path (settings.DATA_DIR / save_as)
                     fname = save_dataframe(df, out)
-                    st.success(f"Saved → {fname}")
+                    st.success(f"Saved As→ {out}")
     
     # with st.container(border = True):
     #     st.markdown(f"### <i class='bi bi-copy'></i> Copy file từ {str(settings.DATA_DIR / str(datetime.now().date()))}/ sang {incremental_settings.IL_DATA_DIR}/",
@@ -211,7 +211,7 @@ def main():
     #         st.success("Copy Success!")
     
     with st.container(border=True):
-        st.markdown(f"### <i class='bi bi-copy'></i> Copy file dữ liệu hàng loạt", unsafe_allow_html=True)
+        st.markdown(f"### <i class='bi bi-copy'></i> Move file dữ liệu hàng loạt", unsafe_allow_html=True)
         
         # 1. Lấy danh sách các thư mục con trong DATA_DIR (thường là các thư mục ngày tháng)
         base_path = Path(settings.DATA_DIR)
@@ -235,11 +235,11 @@ def main():
             file_options = {f.name: f for f in files_in_dir}
             
             selected_file_names = st.multiselect(
-                "Chọn các tập tin để copy:", 
+                "Chọn các tập tin để Move:", 
                 options=list(file_options.keys())
             )
 
-            if st.button("Execute Copy"):
+            if st.button("Execute Move"):
                 if not selected_file_names:
                     st.warning("Vui lòng chọn ít nhất một file.")
                 else:
@@ -248,19 +248,14 @@ def main():
                         f = file_options[name]
                         if not f.exists():
                             continue
-                            
-                        # Lấy thời gian mtime của file để đổi tên tránh trùng
-                        ftime = datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H-%M-%S")
-                        
-                        # Đích đến: Giữ nguyên tên gốc hoặc dùng ftime tùy nhu cầu của bạn
-                        # Ở đây tôi dùng ftime như code cũ của bạn
-                        target_name = f"{ftime}_{f.name}" 
-                        shutil.copy(f.resolve(), Path(incremental_settings.IL_DATA_DIR) / target_name)
+
+                        target_name = f"{f.name}"
+                        shutil.move(f.resolve(), Path(incremental_settings.IL_DATA_DIR) / target_name)
                         
                         # Cập nhật progress bar
                         progress_bar.progress((idx + 1) / len(selected_file_names))
                     
-                    st.success(f"Đã copy thành công {len(selected_file_names)} file vào thư mục Incremental {incremental_settings.IL_DATA_DIR}!")
+                    st.success(f"Đã move thành công {len(selected_file_names)} file vào thư mục Incremental {incremental_settings.IL_DATA_DIR}!")
                     
     # =====================================================
     # SECTION B — JSONL ALERTS

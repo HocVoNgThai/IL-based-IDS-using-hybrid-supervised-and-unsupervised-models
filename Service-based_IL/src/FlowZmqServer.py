@@ -74,10 +74,6 @@ class FlowZmqServer:
         
         self.curr_index_parquet = 0
         
-        # BUFFER 
-        self.flush_buffer = []
-        self.detect_buffer = []
-        
         # HEADER - RUNNING STATE
         self.header = None
         self.running = True
@@ -268,7 +264,7 @@ if __name__ == "__main__":
         detect_queue_size= 100000, # 
         log_queue_size= 100000,
         flush_batch_size= 1280,
-        flush_queue_size= 10000,
+        flush_queue_size= 1000000,
         n_workers=5
     )
 

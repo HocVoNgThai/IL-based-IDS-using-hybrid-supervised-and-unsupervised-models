@@ -6,8 +6,9 @@ After=network.target
 Type=oneshot
 User=root
 WorkingDirectory=/opt/incremental_ids
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/incremental_ids
 ExecStart=/opt/incremental_ids/venv/bin/python -m src.job.il_job
-TimeoutStartSec=0
 Restart=no
 
 [Install]

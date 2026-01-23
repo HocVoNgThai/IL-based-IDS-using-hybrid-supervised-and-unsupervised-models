@@ -1,24 +1,29 @@
 # Standard libs
-import os, sys
-import time
-import fcntl
-from pathlib import Path
-from datetime import datetime
+try:
+    import os, sys
+    import time
+    import fcntl
+    from pathlib import Path
+    from datetime import datetime
 
-# 3rd libs
-import json
-import gc
+    # 3rd libs
+    import json
+    import gc
 
-# Local Import
+    # Local Import
+    from src.config.incremental_config import incremental_settings
+    from src.Components.Incremental import IncrementalLearning
 
-from src.config.incremental_config import incremental_settings
-from src.Components.Incremental import IncrementalLearning
+    # CONST
+    LOG_PREFIX = "[IL-JOB]"
+    MIN_INTERVAL_SEC = incremental_settings.MIN_INTERVAL_SEC
+    LOCK_FILE = incremental_settings.IL_LOCK_FILE
+    STATE_FILE = incremental_settings.IL_STATE_FILE
 
-# CONST
-LOG_PREFIX = "[IL-JOB]"
-MIN_INTERVAL_SEC = incremental_settings.MIN_INTERVAL_SEC
-LOCK_FILE = incremental_settings.IL_LOCK_FILE
-STATE_FILE = incremental_settings.IL_STATE_FILE
+except Exception as e:
+    with open("/tmp/il_error.log", "a") as f:
+        f.write(f"Crash at import: {str(e)}\n")
+    sys.exit(1)
 
 # ===== LOCK =====
 
@@ -116,8 +121,6 @@ def run_incremental_learning(state, last_update_time, current_update_time):
 
 # ===== MAIN =====
 def main():
-    print(f"{LOG_PREFIX} Triggered at {datetime.now()}")
-    
     if not acquire_lock():
         return 0
     
@@ -156,4 +159,5 @@ def main():
         release_lock()
 
 if __name__ == "__main__":
+    print(f"{LOG_PREFIX} Triggered at {datetime.now()}")
     sys.exit(main())

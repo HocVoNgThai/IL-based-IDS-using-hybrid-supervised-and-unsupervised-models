@@ -203,7 +203,8 @@ class IncrementalLearning():
         label_mapping = {}
         for index, key in enumerate(self.dict_current_df):
             label_mapping[key]= index
-            
+        
+        self.df = self.df.sample(frac=1, random_state=42).reset_index(drop=True)
         print("[src.Components.Incremental] Current Label dict: ",label_mapping)
         self.df["Label"]= self.df["Label"].map(label_mapping).astype(np.int8)
         

@@ -27,7 +27,8 @@ class FlushWorker(threading.Thread):
         # BATCH BUFFER
         self.batch_size= batch_size
         self.batch_buffer = []
-        self.buffer_lock = threading.Lock()
+        # self.buffer_lock = threading.Lock()
+        self.last_flush_time = time.time()
         
         # HEADER pd
         self.header = header
@@ -41,59 +42,79 @@ class FlushWorker(threading.Thread):
 
     def run(self):
         print(f"[Flush-{self.worker_id}] started")
+        
         try:
             while self.running: # self.running
                 try:
-                    self.batch_proc()
+                    data = self.q.get(timeout=0.2)
+                    self.batch_proc(data)
+                    self.q.task_done()
                 except queue.Empty:
+                    if time.time() - self.last_flush_time > 30:
+                        self.flush()
                     continue
                 except Exception as e:
                     print(f"[Flush-{self.worker_id}] error:", e)
-            
-        finally:
+                
             
             print(f"[Flush-{self.worker_id}] Exiting Signal received! Flushing data left..." )  
             while not self.q.empty():
                 try:
-                    self.batch_proc()
-                except queue.Empty:
-                    continue
+                    data = self.q.get(timeout=0.2)
+                    self.batch_proc(data)
+                    self.q.task_done()
                 except Exception as e:
                     print(f"[Flush-{self.worker_id}] error:", e)
-            
-            self.flush()
+                    
+        finally:    
             print(f"[Flush-{self.worker_id}] Exit cleanly!")
-    
-    def quick_parse(self, raw_bytes):
-        # Tách dòng và chuyển thành mảng numpy nhanh hơn parser CSV
-        lines = raw_bytes.decode('utf-8').strip().split('\n')
-        data = [l.split(',') for l in lines]
-        return pd.DataFrame(data, columns=self.header)
-    
-    def batch_proc(self):
+            self.flush()
         
-        df = self.q.get(timeout=0.2) 
-        df = self.quick_parse(df)
-        
-        if df.empty:
-            return
-        
-        with self.buffer_lock:
-            self.batch_buffer.append(df)
+    def batch_proc(self, raw_bytes):
+        try:
+            lines = raw_bytes.decode('utf-8').strip().split('\n')
+            data = [l.split(',') for l in lines]
+            df = pd.DataFrame(data, columns=self.header)
             
+            if df.empty:
+                return
+            
+            self.batch_buffer.append(df)    
             # Kiểm tra nếu đã đủ số lượng batch
             if len(self.batch_buffer) >= self.batch_size:
                 self.flush()
+            
+        except Exception as e:
+            print(f"[Flush-{self.worker_id}] Parse error: {e}")
+            
         
-        self.q.task_done()
-    
     def flush(self):
-        with self.buffer_lock:
-            if not self.batch_buffer:
-                print("f[Flush-{self.worker_id}] X Flush Buffer Empty !")
-                return
-            df = pd.concat(self.batch_buffer, ignore_index=True)
-            self.batch_buffer.clear()
+        # with self.buffer_lock:
+        if len(self.batch_buffer)<1 or not self.batch_buffer:
+            return
+        
+        combined_df = pd.concat(self.batch_buffer, ignore_index=True)
+        self.batch_buffer.clear()
+        self.last_flush_time = time.time()
+
+        # Gọi hàm lưu file (Parquet/JSONL)
+        fname = self.flowFlushTransformer.flush(combined_df)
+        if fname:
+            print(f"[Flush-{self.worker_id}] ✔ Saved flows → {fname}")
+        else:
+            print(f"[Flush-{self.worker_id}] ✘ Flush failed (Transformer returned None)")
+        
+        return
+            
+            
+    def flush_old(self):
+        # with self.buffer_lock:
+        if len(self.batch_buffer) < 1:
+            print(f"[Flush-{self.worker_id}] X Flush Buffer Empty !")
+            return
+    
+        df = pd.concat(self.batch_buffer, ignore_index=True)
+        self.batch_buffer.clear()
             
             
         fname = self.flowFlushTransformer.flush(df)
@@ -101,7 +122,6 @@ class FlushWorker(threading.Thread):
             print(f"[Flush-{self.worker_id}] ✔ Flushed {len(df)} batch  → {fname}")
             
         else:
-            
             print("f[Flush-{self.worker_id}] X Cannot Save !")
     
         del df
